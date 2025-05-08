@@ -163,3 +163,54 @@ button:disabled {
   background-color: red;
   color: white;
 }
+
+/* modal */
+.modal-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.modal-wrapper .modal {
+  background-color: white;
+  border-radius: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  max-width: 60rem;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  max-width: 60rem;
+  gap: 2rem;
+}
+.modal-header h2 {
+  font-size: 1.6rem;
+  color: var(--text-color);
+}
+.modal-header button {
+  border: none;
+  font-size: 1.6rem;
+  cursor: pointer;
+}
+.modal-header button:hover {
+  background-color: var(--border-color);
+}
+.modal-body {
+  padding: 2rem;
+  border-radius: 0.8rem;
+  width: 100%;
+  max-width: 60rem;
+  overflow: auto;
+}
