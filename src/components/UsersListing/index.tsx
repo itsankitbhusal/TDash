@@ -1,9 +1,14 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+  type ChangeEvent,
+} from "react";
 import { getPageNumbers } from "@/utils/getPageNumbers.ts";
 import type { ISub, IUser, IUserWithSub } from "@/types/index.ts";
 import { loadSubscriptions, loadUsers } from "@/utils/loadDataLists.ts";
 import { useDisclosure } from "@/hooks/useDisclosure";
 import UserDetailModal from "@/components/UserDetailModal";
+import UserCard from "@/components/UserCard";
 
 const UserListing = () => {
   const [usersData, setUsersData] = useState<IUser[]>([]);
@@ -16,6 +21,8 @@ const UserListing = () => {
   const [selectedStatus, setSelectedStatus] = useState("all");
 
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
+
+  const [toggleFiltered, setToggleFiltered] = useState<boolean>(false);
 
   const [currentPage, setCurrentPage] = useState(0);
   const limit = 10;
@@ -49,7 +56,7 @@ const UserListing = () => {
 
   useEffect(() => {
     setCurrentPage(0);
-  }, [searchQuery, selectedPackage, selectedStatus]);
+  }, [searchQuery, selectedPackage, selectedStatus, toggleFiltered]);
 
   const getStatus = (expires_on?: string) => {
     if (!expires_on) return "active";
@@ -66,12 +73,13 @@ const UserListing = () => {
       .trim();
     const status = getStatus(user.expires_on);
 
-    const matchesSearch = fullName.includes(searchQuery.toLowerCase());
-    const matchesPackage =
-      selectedPackage === "all" || user.package === selectedPackage;
-    const matchesStatus = selectedStatus === "all" || status === selectedStatus;
+    if (toggleFiltered && !user.package) return false;
+    if (!fullName.includes(searchQuery.toLowerCase())) return false;
+    if (selectedPackage !== "all" && user.package !== selectedPackage)
+      return false;
+    if (selectedStatus !== "all" && status !== selectedStatus) return false;
 
-    return matchesSearch && matchesPackage && matchesStatus;
+    return true;
   });
 
   const totalPages = Math.ceil(filteredUsers.length / limit);
@@ -81,11 +89,24 @@ const UserListing = () => {
     (currentPage + 1) * limit
   );
 
-  console.log("filtered data: ", mergedUsers, filteredUsers);
-
   const handleUserClick = (user: IUser) => {
     setSelectedUser(user);
     onOpen();
+  };
+
+  const handleFilteredCheck = (e: ChangeEvent<HTMLInputElement>) => {
+    setToggleFiltered(e.target.checked);
+  };
+
+  const formattedDate = (date?: string) => {
+    if (!date) {
+      return "-";
+    }
+    return new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
 
   return (
@@ -123,10 +144,19 @@ const UserListing = () => {
           <option value="active">Active</option>
           <option value="expired">Expired</option>
         </select>
+
+        <div className="filtered-wrapper">
+          <input
+            type="checkbox"
+            id="filtered-data"
+            onChange={handleFilteredCheck}
+          ></input>
+          <label htmlFor="filtered-data">Show only filtered data</label>
+        </div>
       </div>
 
-      <table>
-        <thead>
+      <table className="table">
+        <thead className="table-header">
           <tr>
             <th>Id</th>
             <th>Name</th>
@@ -138,7 +168,7 @@ const UserListing = () => {
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="table-body">
           {currentData.map((user) => {
             const status = getStatus(user.expires_on);
             const fullName = [user.first_name, user.middle_name, user.last_name]
@@ -149,21 +179,22 @@ const UserListing = () => {
               <tr key={user.id}>
                 <td>{user.id}</td>
                 <td>
-                  <div>
-                    {fullName}
-                    <br />
-                    {user?.email}
-                  </div>
+                  <UserCard name={fullName} email={user.email} />
                 </td>
                 <td>{user.active === "1" ? "Yes" : "No"}</td>
                 <td>{user.country}</td>
                 <td>{user.package ?? "-"}</td>
-                <td>{status}</td>
                 <td>
-                  {user.expires_on
-                    ? new Date(user.expires_on).toLocaleDateString()
-                    : "-"}
+                  <div
+                    className={`status-card ${
+                      status === "active" ? "active" : "expired"
+                    }`}
+                    aria-label={`Status: ${status}`}
+                  >
+                    {status}
+                  </div>
                 </td>
+                <td>{formattedDate(user.expires_on)}</td>
                 <td>
                   <button onClick={() => handleUserClick(user)}>View</button>
                 </td>
@@ -183,7 +214,7 @@ const UserListing = () => {
 
         {pages.map((page, i) =>
           page === -1 || page === -2 ? (
-            <span key={i}>...</span>
+            <span key={i} className="pagination-dots">...</span>
           ) : (
             <button
               key={i}
