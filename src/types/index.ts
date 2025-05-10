@@ -21,5 +21,5 @@ export interface ISub {
 
 export interface IUserWithSub extends IUser {
   packages?: string[];
-  expires_on?: string;
+  expires_on?: string[];
 }

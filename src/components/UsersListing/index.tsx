@@ -47,6 +47,7 @@ const UserListing = () => {
     return {
       ...user,
       packages: sub.map((s) => s.package),
+      expires_on: sub.map((s) => s.expires_on),
     };
   });
 
@@ -67,7 +68,7 @@ const UserListing = () => {
     }`
       .toLowerCase()
       .trim();
-    const status = getStatus(user.expires_on);
+    // const status = getStatus(user.expires_on?.[0]);
 
     if (toggleFiltered && user.packages?.length === 0) return false;
     if (!fullName.includes(searchQuery.toLowerCase())) return false;
@@ -155,12 +156,21 @@ const UserListing = () => {
         </thead>
         <tbody className="table-body">
           {currentData.map((user) => {
-            const status = getStatus(user.expires_on);
             const fullName = [user.first_name, user.middle_name, user.last_name]
               .filter(Boolean)
               .join(" ");
 
-            const formattedExpirationDate = formatDate(user.expires_on);
+            const expiration = user?.expires_on
+              ?.sort((a, b) => {
+                return new Date(a).getTime() - new Date(b).getTime();
+              })
+              ?.map((date) => {
+                return formatDate(date);
+              });
+
+            const status = getStatus(user.expires_on?.[0]);
+            const formattedExpirationDate = expiration?.[0] ?? "-";
+
 
             return (
               <tr key={user.id}>

@@ -15,15 +15,20 @@ const UserDetailModal = ({ user, onClose }: IProps) => {
 
   if (!user) return null;
 
-  // console.log("user: ", user);
+  const expiration = user?.expires_on
+    ?.sort((a, b) => {
+      return new Date(a).getTime() - new Date(b).getTime();
+    })
+    ?.map((date) => {
+      return formatDate(date);
+    });
+
+  const formattedExpirationDates = expiration?.map((e) => e);
+
   const subscriptionStatus =
-    user?.expires_on && new Date(user.expires_on) < new Date()
-      ? "Expired"
-      : "Active";
+    expiration && new Date(expiration?.[0]) < new Date() ? "Expired" : "Active";
   const userStatus = user.active === "1" ? "Active" : "Expired";
   const joinDate = formatTimestampToDate(user.join_date);
-
-  const formattedExpirationDate = formatDate(user.expires_on);
 
   return (
     <div className="modal-wrapper">
@@ -44,7 +49,11 @@ const UserDetailModal = ({ user, onClose }: IProps) => {
               </div>
               <div>
                 <strong>Package</strong>
-                <p>{user.packages?.map((pkg) => pkg + " ")}</p>
+                <p>
+                  {user.packages?.map((pkg, i) =>
+                    user.packages?.length === i + 1 ? pkg : pkg + ", "
+                  )}
+                </p>
               </div>
               <div>
                 <strong>Status</strong>
@@ -56,7 +65,13 @@ const UserDetailModal = ({ user, onClose }: IProps) => {
               </div>
               <div>
                 <strong>Expires On</strong>
-                <p>{formattedExpirationDate}</p>
+                <p>
+                  {formattedExpirationDates?.map((date, i) =>
+                    formattedExpirationDates?.length === i + 1
+                      ? date
+                      : date + ", "
+                  )}
+                </p>
               </div>
             </div>
           </div>
