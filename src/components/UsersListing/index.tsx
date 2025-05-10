@@ -1,14 +1,11 @@
-import {
-  useEffect,
-  useState,
-  type ChangeEvent,
-} from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { getPageNumbers } from "@/utils/getPageNumbers.ts";
 import type { ISub, IUser, IUserWithSub } from "@/types/index.ts";
 import { loadSubscriptions, loadUsers } from "@/utils/loadDataLists.ts";
 import { useDisclosure } from "@/hooks/useDisclosure";
 import UserDetailModal from "@/components/UserDetailModal";
 import UserCard from "@/components/UserCard";
+import { formatDate } from "@/utils/date";
 
 const UserListing = () => {
   const [usersData, setUsersData] = useState<IUser[]>([]);
@@ -98,17 +95,6 @@ const UserListing = () => {
     setToggleFiltered(e.target.checked);
   };
 
-  const formattedDate = (date?: string) => {
-    if (!date) {
-      return "-";
-    }
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
   return (
     <div>
       <div className="filters">
@@ -175,6 +161,8 @@ const UserListing = () => {
               .filter(Boolean)
               .join(" ");
 
+            const formattedExpirationDate = formatDate(user.expires_on);
+
             return (
               <tr key={user.id}>
                 <td>{user.id}</td>
@@ -189,12 +177,11 @@ const UserListing = () => {
                     className={`status-card ${
                       status === "active" ? "active" : "expired"
                     }`}
-                    aria-label={`Status: ${status}`}
                   >
                     {status}
                   </div>
                 </td>
-                <td>{formattedDate(user.expires_on)}</td>
+                <td>{formattedExpirationDate}</td>
                 <td>
                   <button onClick={() => handleUserClick(user)}>View</button>
                 </td>
@@ -213,8 +200,10 @@ const UserListing = () => {
         </button>
 
         {pages.map((page, i) =>
-          page === -1 || page === -2 ? (
-            <span key={i} className="pagination-dots">...</span>
+          page === -1 ? (
+            <span key={i} className="pagination-dots">
+              ...
+            </span>
           ) : (
             <button
               key={i}

@@ -12,7 +12,7 @@ export const getPageNumbers = (current: number, total: number) => {
       if (i > 0 && i < total - 1) pages.push(i);
     }
 
-    if (current < total - 3) pages.push(-2);
+    if (current < total - 3) pages.push(-1);
 
     pages.push(total - 1);
   }
