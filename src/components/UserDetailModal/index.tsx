@@ -44,7 +44,7 @@ const UserDetailModal = ({ user, onClose }: IProps) => {
               </div>
               <div>
                 <strong>Package</strong>
-                <p>{user.package}</p>
+                <p>{user.packages?.map((pkg) => pkg + " ")}</p>
               </div>
               <div>
                 <strong>Status</strong>

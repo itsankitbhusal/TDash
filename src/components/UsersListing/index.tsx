@@ -43,11 +43,10 @@ const UserListing = () => {
   }, []);
 
   const mergedUsers: IUserWithSub[] = usersData.map((user) => {
-    const sub = subsData.find((s) => s.user_id === user.id.toString());
+    const sub = subsData.filter((s) => s.user_id == user.id.toString());
     return {
       ...user,
-      package: sub?.package,
-      expires_on: sub?.expires_on,
+      packages: sub.map((s) => s.package),
     };
   });
 
@@ -70,9 +69,9 @@ const UserListing = () => {
       .trim();
     const status = getStatus(user.expires_on);
 
-    if (toggleFiltered && !user.package) return false;
+    if (toggleFiltered && user.packages?.length === 0) return false;
     if (!fullName.includes(searchQuery.toLowerCase())) return false;
-    if (selectedPackage !== "all" && user.package !== selectedPackage)
+    if (selectedPackage !== "all" && !user.packages?.includes(selectedPackage))
       return false;
     if (selectedStatus !== "all" && status !== selectedStatus) return false;
 
@@ -100,41 +99,44 @@ const UserListing = () => {
   return (
     <div>
       <div className="filters">
-        <input
-          type="text"
-          placeholder="Search by name"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-
-        <select
-          value={selectedPackage}
-          onChange={(e) => setSelectedPackage(e.target.value)}
-        >
-          <option value="all">All Packages</option>
-          {packages.map((pkg) => (
-            <option key={pkg} value={pkg}>
-              {pkg}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={selectedStatus}
-          onChange={(e) => setSelectedStatus(e.target.value)}
-        >
-          <option value="all">All Status</option>
-          <option value="active">Active</option>
-          <option value="expired">Expired</option>
-        </select>
-
-        <div className="filtered-wrapper">
+        <h3>Subscription List</h3>
+        <div className="filter-group">
           <input
-            type="checkbox"
-            id="filtered-data"
-            onChange={handleFilteredCheck}
-          ></input>
-          <label htmlFor="filtered-data">Show only filtered data</label>
+            type="text"
+            placeholder="Search by name"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+
+          <select
+            value={selectedPackage}
+            onChange={(e) => setSelectedPackage(e.target.value)}
+          >
+            <option value="all">All Packages</option>
+            {packages.map((pkg) => (
+              <option key={pkg} value={pkg}>
+                {pkg}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="expired">Expired</option>
+          </select>
+
+          <div className="filtered-wrapper">
+            <input
+              type="checkbox"
+              id="filtered-data"
+              onChange={handleFilteredCheck}
+            ></input>
+            <label htmlFor="filtered-data">Filtered unwanted</label>
+          </div>
         </div>
       </div>
 
@@ -168,7 +170,11 @@ const UserListing = () => {
                 </td>
                 <td>{user.active === "1" ? "Yes" : "No"}</td>
                 <td>{user.country}</td>
-                <td>{user.package ?? "-"}</td>
+                <td>
+                  {user.packages?.map((pkg, i) =>
+                    user.packages?.length == i + 1 ? pkg : pkg + ", "
+                  ) ?? "-"}
+                </td>
                 <td>
                   <div
                     className={`status-card ${

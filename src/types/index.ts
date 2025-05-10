@@ -20,6 +20,6 @@ export interface ISub {
 }
 
 export interface IUserWithSub extends IUser {
-  package?: string;
+  packages?: string[];
   expires_on?: string;
 }
