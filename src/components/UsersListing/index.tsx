@@ -79,6 +79,8 @@ const UserListing = () => {
     return true;
   });
 
+  const packages = Array.from(new Set(subsData.map((s) => s.package)));
+
   const totalPages = Math.ceil(filteredUsers.length / limit);
   const pages = getPageNumbers(currentPage, totalPages);
   const currentData = filteredUsers.slice(
@@ -110,16 +112,11 @@ const UserListing = () => {
           onChange={(e) => setSelectedPackage(e.target.value)}
         >
           <option value="all">All Packages</option>
-          <option value="Plan 1">Plan 1</option>
-          <option value="Plan 2">Plan 2</option>
-          <option value="Plan 3">Plan 3</option>
-          <option value="Plan 4">Plan 4</option>
-          <option value="Plan 5">Plan 5</option>
-          <option value="Plan 6">Plan 6</option>
-          <option value="Plan 7">Plan 7</option>
-          <option value="Plan 8">Plan 8</option>
-          <option value="Plan 9">Plan 9</option>
-          <option value="Plan 10">Plan 10</option>
+          {packages.map((pkg) => (
+            <option key={pkg} value={pkg}>
+              {pkg}
+            </option>
+          ))}
         </select>
 
         <select
