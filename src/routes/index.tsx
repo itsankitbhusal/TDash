@@ -1,10 +1,11 @@
 import Dashboard from "@/pages/Dashboard/index.tsx";
+import Homepage from "@/pages/Homepage";
 import { createBrowserRouter } from "react-router";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <>Hello to react app</>,
+    element: <Homepage />,
   },
   {
     path: "/dashboard",

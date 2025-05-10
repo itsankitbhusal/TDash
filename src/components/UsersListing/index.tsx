@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
-import { getPageNumbers } from "@/utils/getPageNumbers.ts";
+import { useEffect, useState, type ChangeEvent } from "react";
 import type { ISub, IUser, IUserWithSub } from "@/types/index.ts";
 import { loadSubscriptions, loadUsers } from "@/utils/loadDataLists.ts";
 import { useDisclosure } from "@/hooks/useDisclosure";
 import UserDetailModal from "@/components/UserDetailModal";
+import UserCard from "@/components/UserCard";
+import { formatDate } from "@/utils/date";
+import Pagination from "@/components/Pagination";
 
 const UserListing = () => {
   const [usersData, setUsersData] = useState<IUser[]>([]);
@@ -17,8 +19,14 @@ const UserListing = () => {
 
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
 
+  const [toggleFiltered, setToggleFiltered] = useState<boolean>(false);
+
   const [currentPage, setCurrentPage] = useState(0);
   const limit = 10;
+
+  const changePageFromPagination = (page: number) => {
+    setCurrentPage(page);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,17 +47,17 @@ const UserListing = () => {
   }, []);
 
   const mergedUsers: IUserWithSub[] = usersData.map((user) => {
-    const sub = subsData.find((s) => s.user_id === user.id.toString());
+    const sub = subsData.filter((s) => s.user_id == user.id.toString());
     return {
       ...user,
-      package: sub?.package,
-      expires_on: sub?.expires_on,
+      packages: sub.map((s) => s.package),
+      expires_on: sub.map((s) => s.expires_on),
     };
   });
 
   useEffect(() => {
     setCurrentPage(0);
-  }, [searchQuery, selectedPackage, selectedStatus]);
+  }, [searchQuery, selectedPackage, selectedStatus, toggleFiltered]);
 
   const getStatus = (expires_on?: string) => {
     if (!expires_on) return "active";
@@ -64,147 +72,150 @@ const UserListing = () => {
     }`
       .toLowerCase()
       .trim();
-    const status = getStatus(user.expires_on);
+    // const status = getStatus(user.expires_on?.[0]);
 
-    const matchesSearch = fullName.includes(searchQuery.toLowerCase());
-    const matchesPackage =
-      selectedPackage === "all" || user.package === selectedPackage;
-    const matchesStatus = selectedStatus === "all" || status === selectedStatus;
+    if (toggleFiltered && user.packages?.length === 0) return false;
+    if (!fullName.includes(searchQuery.toLowerCase())) return false;
+    if (selectedPackage !== "all" && !user.packages?.includes(selectedPackage))
+      return false;
+    if (selectedStatus !== "all" && status !== selectedStatus) return false;
 
-    return matchesSearch && matchesPackage && matchesStatus;
+    return true;
   });
 
+  const packages = Array.from(new Set(subsData.map((s) => s.package)));
+
   const totalPages = Math.ceil(filteredUsers.length / limit);
-  const pages = getPageNumbers(currentPage, totalPages);
   const currentData = filteredUsers.slice(
     currentPage * limit,
     (currentPage + 1) * limit
   );
-
-  console.log("filtered data: ", mergedUsers, filteredUsers);
 
   const handleUserClick = (user: IUser) => {
     setSelectedUser(user);
     onOpen();
   };
 
+  const handleFilteredCheck = (e: ChangeEvent<HTMLInputElement>) => {
+    setToggleFiltered(e.target.checked);
+  };
+
   return (
-    <div>
+    <div className="user-listing-wrapper">
       <div className="filters">
-        <input
-          type="text"
-          placeholder="Search by name"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+        <h3>Subscription List</h3>
+        <div className="filter-group">
+          <input
+            type="text"
+            placeholder="Search by name"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
 
-        <select
-          value={selectedPackage}
-          onChange={(e) => setSelectedPackage(e.target.value)}
-        >
-          <option value="all">All Packages</option>
-          <option value="Plan 1">Plan 1</option>
-          <option value="Plan 2">Plan 2</option>
-          <option value="Plan 3">Plan 3</option>
-          <option value="Plan 4">Plan 4</option>
-          <option value="Plan 5">Plan 5</option>
-          <option value="Plan 6">Plan 6</option>
-          <option value="Plan 7">Plan 7</option>
-          <option value="Plan 8">Plan 8</option>
-          <option value="Plan 9">Plan 9</option>
-          <option value="Plan 10">Plan 10</option>
-        </select>
+          <select
+            value={selectedPackage}
+            onChange={(e) => setSelectedPackage(e.target.value)}
+          >
+            <option value="all">All Packages</option>
+            {packages.map((pkg) => (
+              <option key={pkg} value={pkg}>
+                {pkg}
+              </option>
+            ))}
+          </select>
 
-        <select
-          value={selectedStatus}
-          onChange={(e) => setSelectedStatus(e.target.value)}
-        >
-          <option value="all">All Status</option>
-          <option value="active">Active</option>
-          <option value="expired">Expired</option>
-        </select>
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="expired">Expired</option>
+          </select>
+
+          <div className="filtered-wrapper">
+            <input
+              type="checkbox"
+              id="filtered-data"
+              onChange={handleFilteredCheck}
+            ></input>
+            <label htmlFor="filtered-data">Filtered unwanted</label>
+          </div>
+        </div>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Id</th>
-            <th>Name</th>
-            <th>Active</th>
-            <th>Country</th>
-            <th>Package</th>
-            <th>Status</th>
-            <th>Expires On</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentData.map((user) => {
-            const status = getStatus(user.expires_on);
-            const fullName = [user.first_name, user.middle_name, user.last_name]
-              .filter(Boolean)
-              .join(" ");
+      <div className="table-wrapper">
+        <table className="table">
+          <thead className="table-header">
+            <tr>
+              <th>Id</th>
+              <th>Name</th>
+              <th>Active</th>
+              <th>Country</th>
+              <th>Package</th>
+              <th>Status</th>
+              <th>Expires On</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody className="table-body">
+            {currentData.map((user) => {
+              const fullName = [
+                user.first_name,
+                user.middle_name,
+                user.last_name,
+              ]
+                .filter(Boolean)
+                .join(" ");
 
-            return (
-              <tr key={user.id}>
-                <td>{user.id}</td>
-                <td>
-                  <div>
-                    {fullName}
-                    <br />
-                    {user?.email}
-                  </div>
-                </td>
-                <td>{user.active === "1" ? "Yes" : "No"}</td>
-                <td>{user.country}</td>
-                <td>{user.package ?? "-"}</td>
-                <td>{status}</td>
-                <td>
-                  {user.expires_on
-                    ? new Date(user.expires_on).toLocaleDateString()
-                    : "-"}
-                </td>
-                <td>
-                  <button onClick={() => handleUserClick(user)}>View</button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+              const expiration = user?.expires_on
+                ?.sort((a, b) => {
+                  return new Date(a).getTime() - new Date(b).getTime();
+                })
+                ?.map((date) => {
+                  return formatDate(date);
+                });
 
-      <div className="pagination">
-        <button
-          onClick={() => setCurrentPage((p) => Math.max(p - 1, 0))}
-          disabled={currentPage === 0}
-        >
-          Previous
-        </button>
+              const status = getStatus(user.expires_on?.[0]);
+              const formattedExpirationDate = expiration?.[0] ?? "-";
 
-        {pages.map((page, i) =>
-          page === -1 || page === -2 ? (
-            <span key={i}>...</span>
-          ) : (
-            <button
-              key={i}
-              onClick={() => setCurrentPage(page)}
-              disabled={page === currentPage}
-              style={{
-                fontWeight: page === currentPage ? "bold" : "normal",
-              }}
-            >
-              {page + 1}
-            </button>
-          )
-        )}
-
-        <button
-          onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages - 1))}
-          disabled={currentPage >= totalPages - 1}
-        >
-          Next
-        </button>
+              return (
+                <tr key={user.id}>
+                  <td>{user.id}</td>
+                  <td>
+                    <UserCard name={fullName} email={user.email} />
+                  </td>
+                  <td>{user.active === "1" ? "Yes" : "No"}</td>
+                  <td>{user.country}</td>
+                  <td>
+                    {user.packages?.map((pkg, i) =>
+                      user.packages?.length == i + 1 ? pkg : pkg + ", "
+                    ) ?? "-"}
+                  </td>
+                  <td>
+                    <div
+                      className={`status-card ${
+                        status === "active" ? "active" : "expired"
+                      }`}
+                    >
+                      {status}
+                    </div>
+                  </td>
+                  <td>{formattedExpirationDate}</td>
+                  <td>
+                    <button onClick={() => handleUserClick(user)}>View</button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
+      <Pagination
+        currentPage={currentPage}
+        changePageFromPagination={changePageFromPagination}
+        totalPages={totalPages}
+      />
 
       {isOpen ? (
         <UserDetailModal user={selectedUser} onClose={onClose} />

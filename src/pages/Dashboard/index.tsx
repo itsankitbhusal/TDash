@@ -1,10 +1,14 @@
+import DashboardAnalytics from "@/components/DashboardAnalytics";
 import UserListing from "@/components/UsersListing/index.tsx";
 
 const Dashboard = () => {
   return (
-    <div>
-      <UserListing />
-    </div>
+    <main className="main-container">
+      <div className="dashboard-wrapper">
+        <DashboardAnalytics />
+        <UserListing />
+      </div>
+    </main>
   );
 };
 
