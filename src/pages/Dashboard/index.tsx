@@ -3,10 +3,12 @@ import UserListing from "@/components/UsersListing/index.tsx";
 
 const Dashboard = () => {
   return (
-    <div className="dashboard-wrapper">
-      <DashboardAnalytics />
-      <UserListing />
-    </div>
+    <main className="main-container">
+      <div className="dashboard-wrapper">
+        <DashboardAnalytics />
+        <UserListing />
+      </div>
+    </main>
   );
 };
 

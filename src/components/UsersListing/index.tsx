@@ -1,11 +1,11 @@
 import { useEffect, useState, type ChangeEvent } from "react";
-import { getPageNumbers } from "@/utils/getPageNumbers.ts";
 import type { ISub, IUser, IUserWithSub } from "@/types/index.ts";
 import { loadSubscriptions, loadUsers } from "@/utils/loadDataLists.ts";
 import { useDisclosure } from "@/hooks/useDisclosure";
 import UserDetailModal from "@/components/UserDetailModal";
 import UserCard from "@/components/UserCard";
 import { formatDate } from "@/utils/date";
+import Pagination from "@/components/Pagination";
 
 const UserListing = () => {
   const [usersData, setUsersData] = useState<IUser[]>([]);
@@ -23,6 +23,10 @@ const UserListing = () => {
 
   const [currentPage, setCurrentPage] = useState(0);
   const limit = 10;
+
+  const changePageFromPagination = (page: number) => {
+    setCurrentPage(page);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -82,7 +86,6 @@ const UserListing = () => {
   const packages = Array.from(new Set(subsData.map((s) => s.package)));
 
   const totalPages = Math.ceil(filteredUsers.length / limit);
-  const pages = getPageNumbers(currentPage, totalPages);
   const currentData = filteredUsers.slice(
     currentPage * limit,
     (currentPage + 1) * limit
@@ -98,7 +101,7 @@ const UserListing = () => {
   };
 
   return (
-    <div>
+    <div className="user-listing-wrapper">
       <div className="filters">
         <h3>Subscription List</h3>
         <div className="filter-group">
@@ -141,103 +144,78 @@ const UserListing = () => {
         </div>
       </div>
 
-      <table className="table">
-        <thead className="table-header">
-          <tr>
-            <th>Id</th>
-            <th>Name</th>
-            <th>Active</th>
-            <th>Country</th>
-            <th>Package</th>
-            <th>Status</th>
-            <th>Expires On</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody className="table-body">
-          {currentData.map((user) => {
-            const fullName = [user.first_name, user.middle_name, user.last_name]
-              .filter(Boolean)
-              .join(" ");
+      <div className="table-wrapper">
+        <table className="table">
+          <thead className="table-header">
+            <tr>
+              <th>Id</th>
+              <th>Name</th>
+              <th>Active</th>
+              <th>Country</th>
+              <th>Package</th>
+              <th>Status</th>
+              <th>Expires On</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody className="table-body">
+            {currentData.map((user) => {
+              const fullName = [
+                user.first_name,
+                user.middle_name,
+                user.last_name,
+              ]
+                .filter(Boolean)
+                .join(" ");
 
-            const expiration = user?.expires_on
-              ?.sort((a, b) => {
-                return new Date(a).getTime() - new Date(b).getTime();
-              })
-              ?.map((date) => {
-                return formatDate(date);
-              });
+              const expiration = user?.expires_on
+                ?.sort((a, b) => {
+                  return new Date(a).getTime() - new Date(b).getTime();
+                })
+                ?.map((date) => {
+                  return formatDate(date);
+                });
 
-            const status = getStatus(user.expires_on?.[0]);
-            const formattedExpirationDate = expiration?.[0] ?? "-";
+              const status = getStatus(user.expires_on?.[0]);
+              const formattedExpirationDate = expiration?.[0] ?? "-";
 
-
-            return (
-              <tr key={user.id}>
-                <td>{user.id}</td>
-                <td>
-                  <UserCard name={fullName} email={user.email} />
-                </td>
-                <td>{user.active === "1" ? "Yes" : "No"}</td>
-                <td>{user.country}</td>
-                <td>
-                  {user.packages?.map((pkg, i) =>
-                    user.packages?.length == i + 1 ? pkg : pkg + ", "
-                  ) ?? "-"}
-                </td>
-                <td>
-                  <div
-                    className={`status-card ${
-                      status === "active" ? "active" : "expired"
-                    }`}
-                  >
-                    {status}
-                  </div>
-                </td>
-                <td>{formattedExpirationDate}</td>
-                <td>
-                  <button onClick={() => handleUserClick(user)}>View</button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-
-      <div className="pagination">
-        <button
-          onClick={() => setCurrentPage((p) => Math.max(p - 1, 0))}
-          disabled={currentPage === 0}
-        >
-          Previous
-        </button>
-
-        {pages.map((page, i) =>
-          page === -1 ? (
-            <span key={i} className="pagination-dots">
-              ...
-            </span>
-          ) : (
-            <button
-              key={i}
-              onClick={() => setCurrentPage(page)}
-              disabled={page === currentPage}
-              style={{
-                fontWeight: page === currentPage ? "bold" : "normal",
-              }}
-            >
-              {page + 1}
-            </button>
-          )
-        )}
-
-        <button
-          onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages - 1))}
-          disabled={currentPage >= totalPages - 1}
-        >
-          Next
-        </button>
+              return (
+                <tr key={user.id}>
+                  <td>{user.id}</td>
+                  <td>
+                    <UserCard name={fullName} email={user.email} />
+                  </td>
+                  <td>{user.active === "1" ? "Yes" : "No"}</td>
+                  <td>{user.country}</td>
+                  <td>
+                    {user.packages?.map((pkg, i) =>
+                      user.packages?.length == i + 1 ? pkg : pkg + ", "
+                    ) ?? "-"}
+                  </td>
+                  <td>
+                    <div
+                      className={`status-card ${
+                        status === "active" ? "active" : "expired"
+                      }`}
+                    >
+                      {status}
+                    </div>
+                  </td>
+                  <td>{formattedExpirationDate}</td>
+                  <td>
+                    <button onClick={() => handleUserClick(user)}>View</button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
+      <Pagination
+        currentPage={currentPage}
+        changePageFromPagination={changePageFromPagination}
+        totalPages={totalPages}
+      />
 
       {isOpen ? (
         <UserDetailModal user={selectedUser} onClose={onClose} />
