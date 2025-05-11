@@ -245,6 +245,13 @@ button:disabled {
   height: 80vh;
 }
 
+.name-header {
+  cursor: pointer;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
 .table-wrapper {
   min-height: 80vh;
 }

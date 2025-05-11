@@ -6,6 +6,8 @@ import UserDetailModal from "@/components/UserDetailModal";
 import UserCard from "@/components/UserCard";
 import { formatDate } from "@/utils/date";
 import Pagination from "@/components/Pagination";
+import { HiMiniArrowsUpDown } from "react-icons/hi2";
+import { AiOutlineSortAscending, AiOutlineSortDescending } from "react-icons/ai";
 
 const UserListing = () => {
   const [usersData, setUsersData] = useState<IUser[]>([]);
@@ -20,6 +22,8 @@ const UserListing = () => {
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
 
   const [toggleFiltered, setToggleFiltered] = useState<boolean>(false);
+
+  const [sortByName, setSortByName] = useState<boolean | null>(null);
 
   const [currentPage, setCurrentPage] = useState(0);
   const limit = 10;
@@ -89,10 +93,6 @@ const UserListing = () => {
   const packages = Array.from(new Set(subsData.map((s) => s.package)));
 
   const totalPages = Math.ceil(filteredUsers.length / limit);
-  const currentData = filteredUsers.slice(
-    currentPage * limit,
-    (currentPage + 1) * limit
-  );
 
   const handleUserClick = (user: IUser) => {
     setSelectedUser(user);
@@ -102,6 +102,37 @@ const UserListing = () => {
   const handleFilteredCheck = (e: ChangeEvent<HTMLInputElement>) => {
     setToggleFiltered(e.target.checked);
   };
+
+  const handleSortName = () => {
+    if (sortByName === null) {
+      setSortByName(true);
+    } else if (sortByName) {
+      setSortByName(false);
+    } else {
+      setSortByName(null);
+    }
+  };
+
+  const sortedUsers =
+    sortByName === null
+      ? filteredUsers
+      : filteredUsers.sort((a, b) => {
+          const nameA = `${a.first_name} ${a.middle_name || ""} ${a.last_name}`
+            .toLowerCase()
+            .trim();
+          const nameB = `${b.first_name} ${b.middle_name || ""} ${b.last_name}`
+            .toLowerCase()
+            .trim();
+
+          return sortByName
+            ? nameA.localeCompare(nameB)
+            : nameB.localeCompare(nameA);
+        });
+
+  const currentData = sortedUsers.slice(
+    currentPage * limit,
+    (currentPage + 1) * limit
+  );
 
   return (
     <div className="user-listing-wrapper">
@@ -152,7 +183,16 @@ const UserListing = () => {
           <thead className="table-header">
             <tr>
               <th>Id</th>
-              <th>Name</th>
+              <th>
+                <div className="name-header" onClick={handleSortName}>
+                  Name{" "}
+                  {sortByName === null ? null : sortByName ? (
+                    <AiOutlineSortAscending fontSize="1.2rem" />
+                  ) : (
+                    <AiOutlineSortDescending fontSize="1.2rem" />
+                  )}
+                </div>
+              </th>
               <th>Active</th>
               <th>Country</th>
               <th>Package</th>
