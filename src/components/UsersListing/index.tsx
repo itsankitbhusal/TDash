@@ -6,7 +6,6 @@ import UserDetailModal from "@/components/UserDetailModal";
 import UserCard from "@/components/UserCard";
 import { formatDate } from "@/utils/date";
 import Pagination from "@/components/Pagination";
-import { HiMiniArrowsUpDown } from "react-icons/hi2";
 import { AiOutlineSortAscending, AiOutlineSortDescending } from "react-icons/ai";
 
 const UserListing = () => {
