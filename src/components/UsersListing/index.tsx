@@ -6,6 +6,7 @@ import UserDetailModal from "@/components/UserDetailModal";
 import UserCard from "@/components/UserCard";
 import { formatDate } from "@/utils/date";
 import Pagination from "@/components/Pagination";
+import { AiOutlineSortAscending, AiOutlineSortDescending } from "react-icons/ai";
 
 const UserListing = () => {
   const [usersData, setUsersData] = useState<IUser[]>([]);
@@ -20,6 +21,8 @@ const UserListing = () => {
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
 
   const [toggleFiltered, setToggleFiltered] = useState<boolean>(false);
+
+  const [sortByName, setSortByName] = useState<boolean | null>(null);
 
   const [currentPage, setCurrentPage] = useState(0);
   const limit = 10;
@@ -72,7 +75,10 @@ const UserListing = () => {
     }`
       .toLowerCase()
       .trim();
-    // const status = getStatus(user.expires_on?.[0]);
+
+    // for only first subscription (this needs to be changed)
+    // console.log('expires_on', user.expires_on);
+    const status = getStatus(user.expires_on?.[0]);
 
     if (toggleFiltered && user.packages?.length === 0) return false;
     if (!fullName.includes(searchQuery.toLowerCase())) return false;
@@ -86,10 +92,6 @@ const UserListing = () => {
   const packages = Array.from(new Set(subsData.map((s) => s.package)));
 
   const totalPages = Math.ceil(filteredUsers.length / limit);
-  const currentData = filteredUsers.slice(
-    currentPage * limit,
-    (currentPage + 1) * limit
-  );
 
   const handleUserClick = (user: IUser) => {
     setSelectedUser(user);
@@ -99,6 +101,37 @@ const UserListing = () => {
   const handleFilteredCheck = (e: ChangeEvent<HTMLInputElement>) => {
     setToggleFiltered(e.target.checked);
   };
+
+  const handleSortName = () => {
+    if (sortByName === null) {
+      setSortByName(true);
+    } else if (sortByName) {
+      setSortByName(false);
+    } else {
+      setSortByName(null);
+    }
+  };
+
+  const sortedUsers =
+    sortByName === null
+      ? filteredUsers
+      : filteredUsers.sort((a, b) => {
+          const nameA = `${a.first_name} ${a.middle_name || ""} ${a.last_name}`
+            .toLowerCase()
+            .trim();
+          const nameB = `${b.first_name} ${b.middle_name || ""} ${b.last_name}`
+            .toLowerCase()
+            .trim();
+
+          return sortByName
+            ? nameA.localeCompare(nameB)
+            : nameB.localeCompare(nameA);
+        });
+
+  const currentData = sortedUsers.slice(
+    currentPage * limit,
+    (currentPage + 1) * limit
+  );
 
   return (
     <div className="user-listing-wrapper">
@@ -149,7 +182,16 @@ const UserListing = () => {
           <thead className="table-header">
             <tr>
               <th>Id</th>
-              <th>Name</th>
+              <th>
+                <div className="name-header" onClick={handleSortName}>
+                  Name{" "}
+                  {sortByName === null ? null : sortByName ? (
+                    <AiOutlineSortAscending fontSize="1.2rem" />
+                  ) : (
+                    <AiOutlineSortDescending fontSize="1.2rem" />
+                  )}
+                </div>
+              </th>
               <th>Active</th>
               <th>Country</th>
               <th>Package</th>
@@ -159,55 +201,65 @@ const UserListing = () => {
             </tr>
           </thead>
           <tbody className="table-body">
-            {currentData.map((user) => {
-              const fullName = [
-                user.first_name,
-                user.middle_name,
-                user.last_name,
-              ]
-                .filter(Boolean)
-                .join(" ");
+            {currentData.length > 0 ? (
+              currentData.map((user) => {
+                const fullName = [
+                  user.first_name,
+                  user.middle_name,
+                  user.last_name,
+                ]
+                  .filter(Boolean)
+                  .join(" ");
 
-              const expiration = user?.expires_on
-                ?.sort((a, b) => {
-                  return new Date(a).getTime() - new Date(b).getTime();
-                })
-                ?.map((date) => {
-                  return formatDate(date);
-                });
+                const expiration = user?.expires_on
+                  ?.sort((a, b) => {
+                    return new Date(a).getTime() - new Date(b).getTime();
+                  })
+                  ?.map((date) => {
+                    return formatDate(date);
+                  });
 
-              const status = getStatus(user.expires_on?.[0]);
-              const formattedExpirationDate = expiration?.[0] ?? "-";
+                const status = getStatus(user.expires_on?.[0]);
+                const formattedExpirationDate = expiration?.[0] ?? "-";
 
-              return (
-                <tr key={user.id}>
-                  <td>{user.id}</td>
-                  <td>
-                    <UserCard name={fullName} email={user.email} />
-                  </td>
-                  <td>{user.active === "1" ? "Yes" : "No"}</td>
-                  <td>{user.country}</td>
-                  <td>
-                    {user.packages?.map((pkg, i) =>
-                      user.packages?.length == i + 1 ? pkg : pkg + ", "
-                    ) ?? "-"}
-                  </td>
-                  <td>
-                    <div
-                      className={`status-card ${
-                        status === "active" ? "active" : "expired"
-                      }`}
-                    >
-                      {status}
-                    </div>
-                  </td>
-                  <td>{formattedExpirationDate}</td>
-                  <td>
-                    <button onClick={() => handleUserClick(user)}>View</button>
-                  </td>
-                </tr>
-              );
-            })}
+                return (
+                  <tr key={user.id}>
+                    <td>{user.id}</td>
+                    <td>
+                      <UserCard name={fullName} email={user.email} />
+                    </td>
+                    <td>{user.active === "1" ? "Yes" : "No"}</td>
+                    <td>{user.country}</td>
+                    <td>
+                      {user.packages?.map((pkg, i) =>
+                        user.packages?.length == i + 1 ? pkg : pkg + ", "
+                      ) ?? "-"}
+                    </td>
+                    <td>
+                      <div
+                        className={`status-card ${
+                          status === "active" ? "active" : "expired"
+                        }`}
+                      >
+                        {status}
+                      </div>
+                    </td>
+                    <td>{formattedExpirationDate}</td>
+                    <td>
+                      <button onClick={() => handleUserClick(user)}>
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr className="no-data">
+                <td colSpan={8}>
+                  <p>No data found</p>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
